@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  passwordHash    String?
+  role            Role     @default(PENDING)
+  googleId        String?  @unique
+  calendarToken   String?  // JSON string with OAuth tokens/refresh token
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  shifts          Shift[]  @relation("EmployeeShifts")
+}
+
+enum Role {
+  MANAGER
+  EMPLOYEE
+  PENDING // registered but unconfirmed
+}
+
+model Place {
+  id        String   @id @default(cuid())
+  name      String
+  latitude  Float
+  longitude Float
+  polygon   Json     // GeoJSON polygon for Leaflet
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shifts    Shift[]
+}
+
+model Shift {
+  id             String       @id @default(cuid())
+  date           DateTime
+  startTime      DateTime
+  endTime        DateTime
+  employee       User         @relation("EmployeeShifts", fields: [employeeId], references: [id])
+  employeeId     String
+  place          Place        @relation(fields: [placeId], references: [id])
+  placeId        String
+  externalEventId String?     // Google Calendar event id
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  resultEntries  ShiftResult[]
+}
+
+model ShiftResult {
+  id         String   @id @default(cuid())
+  shift      Shift    @relation(fields: [shiftId], references: [id])
+  shiftId    String
+  formRowId  String   // row identifier from Google Sheet
+  data       Json     // raw form data from Sheets
+  createdAt  DateTime @default(now())
+}
+

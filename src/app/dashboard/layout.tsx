@@ -1,0 +1,18 @@
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+
+export default async function DashboardLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/auth/login");
+
+  const role = ((session.user as any)?.role as string | undefined) ?? "PENDING";
+
+  return <DashboardShell role={role}>{children}</DashboardShell>;
+}
+
